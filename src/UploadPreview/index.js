@@ -19,8 +19,9 @@ export default class UploadPreview extends Component {
         label: 'Upload',
         fileTypeRegex: /^image.*$/,
         onFileLoad: (e, file) => undefined,
-        onChange: (items) => undefined,
-        initialItems: {}
+        onChange: (items,fileName) => undefined,
+        initialItems: {},
+        fileName:[]
     };
 
     static propTypes = {
@@ -29,7 +30,8 @@ export default class UploadPreview extends Component {
         fileTypeRegex: propTypes.object,
         onFileLoad: propTypes.func,
         onChange: propTypes.func,
-        initialItems: propTypes.object
+        initialItems: propTypes.object,
+        fileName: _propTypes2.default.Array
     };
 
     exclusiveProps = [
@@ -41,30 +43,39 @@ export default class UploadPreview extends Component {
 
     constructor(props) {
         super();
-        this.state = {items: props.initialItems};
+        this.state = {items: props.initialItems , fileName:[]};
     };
 
     onFileLoad = (e, file) => {
         let hash = new SHA1().hex(e.target.result);
         let items = {...this.state.items};
         items[hash] = e.target.result;
-        this.setState({items});
+        let Images = [...this.state.fileName];
+        Images.push(file);
+        this.setState({ items, fileName: Images });
 
         this.props.onFileLoad(e, file);
-        this.props.onChange(items);
+        this.props.onChange(items , this.state.fileName);
     };
 
     onRemoveAllClick = (e) => {
         let items = {};
+        const $this = this;
+        this.state.fileName = [];
         this.setState({items});
-        this.props.onChange(items);
+        this.props.onChange(items,this.state.fileName);
+        setTimeout(function() {$this.forceUpdate()},200);
     };
 
     onRemoveClick = (key) => (e) => {
+        const $this = this;
         let items = {...this.state.items};
         delete items[key];
-        this.setState({items});
-        this.props.onChange(items);
+        _this.state.fileName.splice(fileName,1);
+        var filename = _this.state.fileName;
+        this.setState({ items , fileName: filename });
+        this.props.onChange(items,this.state.fileName);
+        setTimeout(function() {$this.forceUpdate()},200);
     };
 
     getUploadProps() {
@@ -82,13 +93,13 @@ export default class UploadPreview extends Component {
             );
     };
 
-    renderPreview = (key) => (
+    renderPreview = (key , fileName) => (
         <div key={key} className={styles.PreviewContainer}>
           <img src={this.state.items[key]} className={styles.Image}/>
           <FloatingActionButton
             className={styles.RemoveItem}
             mini={true}
-            onClick={this.onRemoveClick(key)}
+            onClick={this.onRemoveClick(key , fileName)}
             >
             <ContentRemove/>
           </FloatingActionButton>
@@ -99,7 +110,7 @@ export default class UploadPreview extends Component {
         <div className={styles.PreviewsContainer}>
           {
               Object
-                  .keys(this.state.items)
+                  .keys(this.state.items , this.state.fileName)
                   .map(this.renderPreview)
           }
         </div>
